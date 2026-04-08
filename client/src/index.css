@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --color-board-light: #ecdcc3;
+  --color-board-dark: #c5a880;
+  --color-chess-gold: #c4a46a;
+  --color-chess-gold-dark: #a3844d;
+  --color-chess-wood-light: #dccab3;
+  --color-chess-board: #2b2621;
+}
+
+@utility bg-chess-pattern {
+  background-image: 
+    linear-gradient(45deg, var(--color-board-dark) 25%, transparent 25%), 
+    linear-gradient(-45deg, var(--color-board-dark) 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, var(--color-board-dark) 75%), 
+    linear-gradient(-45deg, transparent 75%, var(--color-board-dark) 75%);
+  background-size: 200px 200px;
+  background-position: 0 0, 0 100px, 100px -100px, -100px 0px;
+  background-color: var(--color-board-light);
+}
+
+@utility btn-gold {
+  background: linear-gradient(to bottom, var(--color-chess-gold), var(--color-chess-gold-dark));
+  color: #2b2621;
+  font-weight: 800;
+  border-radius: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  
+  &:hover {
+    filter: brightness(110%);
+    transform: translateY(-2px);
+  }
+}
+
+@utility glass-panel {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+}
