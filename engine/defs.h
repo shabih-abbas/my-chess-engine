@@ -1,9 +1,27 @@
+#include <stdlib.h>
 #ifndef DEFS_H
 #define DEFS_H
+
+#define DEBUG
+#ifndef DEBUG
+#define ASSERT(n)
+#else
+#define ASSERT(n) \
+if(!(n)) { \
+printf("%s - Failed", #n); \
+printf("On %s ", __DATE__); \
+printf("At %s ", __TIME__); \
+printf("In File %s ", __FILE__); \
+printf("At Line %d\n", __LINE__); \
+exit(1);}
+#endif
 
 typedef unsigned long long U64;
 
 #define BRD_SQRS 120
+#define MAX_MOVES 2048
+#define OFFBOARD -1
+#define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 enum {EMPTY, wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK};
 enum {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NONE};
@@ -24,12 +42,23 @@ enum {
 
 enum {FALSE, TRUE};
 
+enum {WKSC=1, WQSC=2, BKSC=4, BQSC=8};
+
+typedef struct {
+    int move;
+    int castlePerm;
+    int enPas;
+    int fiftyMoves;
+    U64 posKey;
+} MOVE;
+
 typedef struct {
     int squares[BRD_SQRS];
     U64 pawns[3];
     int KingSq[2];
     int turn;
     int enPas;
+    int castlePerm;
     int fiftyMoves;
     int ply;
     int hisPly;
@@ -38,6 +67,48 @@ typedef struct {
     int bigPce[3];
     int majPce[3];
     int minPce[3];
+    MOVE history[MAX_MOVES];
+    int pList[13][10];
 } BOARD;
 
+// MACROS
+#define FR2SQ(f,r) ((21 + (f)) + (10 * (r)))
+#define SQ64(sq120) (Sq120ToSq64[(sq120)])
+#define SQ120(sq64) (Sq64ToSq120[(sq64)])
+#define POP(b) PopBit(b)
+#define CNT(b) CountBits(b)
+#define CLRBIT(bb,sq) ((bb) &= ClearMask[(sq)])
+#define SETBIT(bb,sq) ((bb) |= SetMask[(sq)])
+#define RAND_64 (   (U64)rand() | \
+                    (U64)rand() << 15 | \
+                    (U64)rand() << 30 | \
+                    (U64)rand() << 45 | \
+                    ((U64)rand() & 0xf) << 60   )
+
+// GLOBALS
+extern int Sq120ToSq64[BRD_SQRS];
+extern int Sq64ToSq120[64];
+extern U64 SetMask[64];
+extern U64 ClearMask[64];
+extern char PceChar[];
+extern char SideChar[];
+extern char RankChar[];
+extern char FileChar[];
+
+extern U64 PieceKeys[13][120];
+extern U64 SideKey;
+extern U64 CastleKeys[16];
+
+extern void AllInit();
+
+// bitBoard
+extern void PrintBitBoard(U64 bb);
+extern int PopBit(U64 *bb);
+extern int CountBits(U64 b);
+// board
+extern void ResetBoard(BOARD *pos);
+extern int ParseFen(char *fen, BOARD *pos);
+extern void PrintBoard(const BOARD *pos);
+// poskey
+extern U64 GeneratePosKey(const BOARD *pos);
 #endif
