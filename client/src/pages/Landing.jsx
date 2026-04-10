@@ -24,10 +24,10 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 w-full max-w-lg">
-            <button className="btn-gold flex-1 text-2xl py-5 flex items-center justify-center gap-4 group">
+            <Link to='game-setup' className="btn-gold flex-1 text-2xl py-5 flex items-center justify-center gap-4 group">
               <img src={Pawn} alt="" className="w-7 h-7 group-hover:-translate-y-1 transition-transform" />
               New Game
-            </button>
+            </Link>
             <Link to='login' className="glass-panel flex-1 text-2xl py-5 text-white font-semibold flex items-center justify-center gap-4 hover:bg-white/20 transition-all">
               <img src={Knight} alt="" className="w-7 h-7" />
               Login

@@ -36,7 +36,7 @@ export default function Dashboard() {
 
           <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-10 border-t border-white/5 md:border-none pt-4 md:pt-0">
             <div className="flex gap-4 md:gap-8">
-              <Link to="/play" className="text-white/60 hover:text-chess-gold font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all">
+              <Link to="/game-setup" className="text-white/60 hover:text-chess-gold font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all">
                 New Game
               </Link>
               <Link to="/analyze" className="text-white/60 hover:text-chess-gold font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all">
