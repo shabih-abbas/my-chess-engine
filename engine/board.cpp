@@ -1,6 +1,114 @@
 #include <stdio.h>
 #include "defs.h"
 
+int CheckBoard(const BOARD *pos){
+    int t_pceNum[13] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int t_bigPce[2] = {0, 0};
+    int t_majPce[2] = {0, 0};
+    int t_minPce[2] = {0, 0};
+    int t_material[2] = {0, 0};
+
+    int sq64, t_piece, t_pce_num, sq120, colour, pcount;
+
+    U64 t_pawns[3] = {0ULL, 0ULL, 0ULL};
+
+    t_pawns[WHITE] = pos->pawns[WHITE];
+    t_pawns[BLACK] = pos->pawns[BLACK];
+    t_pawns[BOTH] = pos->pawns[BOTH];
+
+    for(t_piece = wP; t_piece <= bK; ++t_piece) {
+        for(t_pce_num = 0; t_pce_num < pos->pceNum[t_piece]; t_pce_num++){
+            sq120 = pos->pList[t_piece][t_pce_num];
+            ASSERT(pos->squares[sq120] == t_piece);
+        }
+    }
+
+    for(sq64 = 0; sq64 < 64; ++sq64){
+        sq120 = SQ120(sq64);
+        t_piece = pos->squares[sq120];
+        t_pceNum[t_piece]++;
+        colour = PieceCol[t_piece];
+        if(PieceBig[t_piece] == TRUE) t_bigPce[colour]++;
+        if(PieceMin[t_piece] == TRUE) t_minPce[colour]++;
+        if(PieceMaj[t_piece] == TRUE) t_majPce[colour]++;
+
+        t_material[colour] += PieceVal[t_piece];
+    }
+
+    for(t_piece = wP; t_piece <= bK; ++t_piece) {
+        ASSERT(t_pceNum[t_piece] == pos->pceNum[t_piece]);
+    }
+
+    pcount = CNT(t_pawns[WHITE]);
+    ASSERT(pcount == pos->pceNum[wP]);
+    pcount = CNT(t_pawns[BLACK]);
+    ASSERT(pcount == pos->pceNum[bP]);
+    pcount = CNT(t_pawns[BOTH]);
+    ASSERT(pcount == (pos->pceNum[wP] + pos->pceNum[bP]));
+
+    while(t_pawns[WHITE]) {
+        sq64 = POP(&t_pawns[WHITE]);
+        ASSERT(pos->squares[SQ120(sq64)] == wP);
+    }
+
+    while(t_pawns[BLACK]) {
+        sq64 = POP(&t_pawns[BLACK]);
+        ASSERT(pos->squares[SQ120(sq64)] == bP);
+    }
+
+    while(t_pawns[BOTH]) {
+        sq64 = POP(&t_pawns[BOTH]);
+        ASSERT((pos->squares[SQ120(sq64)] == wP) || (pos->squares[SQ120(sq64)] == bP));
+    }
+
+    ASSERT(t_material[WHITE] == pos->material[WHITE] && t_material[BLACK] == pos->material[BLACK]);
+    ASSERT(t_minPce[WHITE] == pos->minPce[WHITE] && t_minPce[BLACK] == pos->minPce[BLACK]);
+    ASSERT(t_majPce[WHITE] == pos->majPce[WHITE] && t_majPce[BLACK] == pos->majPce[BLACK]);
+    ASSERT(t_bigPce[WHITE] == pos->bigPce[WHITE] && t_bigPce[BLACK] == pos->bigPce[BLACK]);
+
+    ASSERT(pos->turn == WHITE || pos->turn == BLACK);
+    ASSERT(GeneratePosKey(pos) == pos-> posKey);
+
+    ASSERT(pos->enPas == NO_SQR || (RanksBrd[pos->enPas] == RANK_6 && pos->turn == WHITE) || (RanksBrd[pos->enPas] == RANK_3 && pos->turn == BLACK));
+
+    ASSERT(pos->squares[pos->KingSq[WHITE]] == wK);
+    ASSERT(pos->squares[pos->KingSq[BLACK]] == bK);
+
+    return TRUE;
+}
+void UpdateListsMaterial(BOARD *pos){
+    int piece, sq, index, colour;
+
+    for(index = 0; index < BRD_SQRS; ++index){
+        sq = index;
+        piece = pos->squares[index];
+        if(piece != OFFBOARD && piece != EMPTY){
+            colour = PieceCol[piece];
+
+            if(PieceBig[piece] == TRUE) pos->bigPce[colour]++;
+            if(PieceMin[piece] == TRUE) pos->minPce[colour]++;
+            if(PieceMaj[piece] == TRUE) pos->majPce[colour]++;
+
+            pos->material[colour] += PieceVal[piece];
+
+            pos->pList[piece][pos->pceNum[piece]] = sq;
+            pos->pceNum[piece]++;
+
+            if(piece == wK) pos->KingSq[WHITE] = sq;
+            if(piece == bK) pos->KingSq[BLACK] = sq;
+
+            if(piece == wP) {
+                SETBIT(pos->pawns[WHITE], SQ64(sq));
+                SETBIT(pos->pawns[BOTH], SQ64(sq));
+            } else if(piece == bP) {
+                SETBIT(pos->pawns[BLACK], SQ64(sq));
+                SETBIT(pos->pawns[BOTH], SQ64(sq));
+            }
+
+        }
+    }
+}
+
 int ParseFen(char *fen, BOARD *pos){
     ASSERT(fen!=NULL);
     ASSERT(pos!=NULL);
@@ -97,7 +205,7 @@ int ParseFen(char *fen, BOARD *pos){
         pos->enPas = FR2SQ(file, rank);
     }
     pos->posKey = GeneratePosKey(pos);
-
+    UpdateListsMaterial(pos);
     return 0;
 }
 void ResetBoard(BOARD *pos) {
@@ -149,7 +257,7 @@ extern void PrintBoard(const BOARD *pos){
         }
         printf("\n");
     }
-    printf("\n");
+    printf("\n  ");
     for(file = FILE_A; file <= FILE_H; file++){
         printf("%3c", 'a'+file);
     }

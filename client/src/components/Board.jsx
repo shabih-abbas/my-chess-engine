@@ -11,7 +11,6 @@ export default function Board({ userColor, setTurn, onGameOver }) {
   const [optionSquares, setOptionSquares] = useState({});
   const [isEngineTurn, setIsEngineTurn] = useState(userColor === "black");
 
-  // Engine move effect — triggers whenever isEngineTurn becomes true
   useEffect(() => {
     if (!isEngineTurn) return;
 
