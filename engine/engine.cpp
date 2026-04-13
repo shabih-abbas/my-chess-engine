@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "defs.h"
 
-#define FEN1 "8/3q1p2/8/5P2/4Q3/8/8/8 w - - 0 2"
+#define FEN1 "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq e6 0 1"
 #define FEN2 "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"
 
 void ShowSqAtBySide(const int side, const BOARD *pos){
@@ -29,17 +29,13 @@ int main(){
 
     BOARD board[1];
 
-    ParseFen(FEN2, board);
+    ParseFen(FEN1, board);
     PrintBoard(board);
-    
-    ASSERT(CheckBoard(board));
 
-    int move = 0;
-    int from = 6; int to = 12;
-    int cap = wR; int prom = bR;
-    move = ((from) | (to << 7) | (cap << 14) | (prom << 20));
-    printf("\ndec: %d hex:%X\n", move, move);
+    MOVELIST list[1];
 
-    printf("from:%d to:%d cap:%d prom:%d\n", FROMSQ(move), TOSQ(move), CAPTURED(move), PROMOTED(move));
+    GenerateAllMoves(board, list);
+
+    PrintMoveList(list);
     return 0;
 }

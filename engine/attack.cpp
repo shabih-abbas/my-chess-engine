@@ -8,6 +8,10 @@ const int KiDir[8] = {-1, -10, 1, 10, -9, -11, 11, 9};
 int SqAttacked(const int sq, const int side, const BOARD *pos){
     int piece, index, t_sq, dir;
 
+    ASSERT(SqOnBoard(sq));
+    ASSERT(SideValid(side));
+    ASSERT(CheckBoard(pos));
+
     if(side == WHITE) {
         if(pos->squares[sq - 11] == wP || pos->squares[sq - 9] == wP) {
             return TRUE;

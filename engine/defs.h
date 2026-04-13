@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #ifndef DEFS_H
 #define DEFS_H
 
@@ -19,7 +20,8 @@ exit(1);}
 typedef unsigned long long U64;
 
 #define BRD_SQRS 120
-#define MAX_MOVES 2048
+#define MAXGAMEMOVES 2048
+#define MAXPOSITIONMOVES 256
 #define OFFBOARD -1
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -49,6 +51,11 @@ typedef struct {
     int score;
 } MOVE;
 
+typedef struct{
+    MOVE moves[MAXPOSITIONMOVES];
+    int count;
+} MOVELIST;
+
 typedef struct {
     int move;
     int castlePerm;
@@ -73,7 +80,7 @@ typedef struct {
     int majPce[2];
     int minPce[2];
     int material[2];
-    UNDO history[MAX_MOVES];
+    UNDO history[MAXGAMEMOVES];
     int pList[13][10];
 } BOARD;
 
@@ -157,4 +164,16 @@ extern int CheckBoard(const BOARD *pos);
 extern U64 GeneratePosKey(const BOARD *pos);
 // attack
 extern int SqAttacked(const int sq, const int side, const BOARD *pos);
+// io
+extern char *PrMove(const int move);
+extern char *PrSq(const int sq);
+extern void PrintMoveList(const MOVELIST *list);
+// validate
+extern int SqOnBoard(const int sq);
+extern int SideValid(const int side);
+extern int FileRankValid(const int fr);
+extern int PieceValidEmpty(const int piece);
+extern int PieceValid(const int piece);
+//movegen
+extern void GenerateAllMoves(const BOARD *pos, MOVELIST *list);
 #endif
