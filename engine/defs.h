@@ -3,7 +3,7 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-#define DEBUG
+// #define DEBUG
 #ifndef DEBUG
 #define ASSERT(n)
 #else
@@ -143,6 +143,7 @@ extern int PieceVal[13];
 extern int PieceCol[13];
 extern int FilesBrd[BRD_SQRS];
 extern int RanksBrd[BRD_SQRS];
+extern int PiecePawn[13];
 extern int PieceKnight[13];
 extern int PieceKing[13];
 extern int PieceRookQueen[13];
@@ -177,4 +178,9 @@ extern int PieceValidEmpty(const int piece);
 extern int PieceValid(const int piece);
 //movegen
 extern void GenerateAllMoves(const BOARD *pos, MOVELIST *list);
+//makemove
+extern int MakeMove(BOARD *pos, int move);
+extern void TakeMove(BOARD *pos);
+//perft
+extern void PerftTest(int depth, BOARD *pos);
 #endif

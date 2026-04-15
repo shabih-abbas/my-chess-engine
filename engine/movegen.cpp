@@ -208,12 +208,10 @@ void GenerateAllMoves(const BOARD *pos, MOVELIST *list){
     piece = LoopSlidePce[pceIndex++];
     while( piece != 0){
         ASSERT(PieceValid(piece));
-        printf("sliders pceIndex:%d pce:%d\n", pceIndex, piece);
 
         for(pceNum = 0; pceNum < pos->pceNum[piece]; ++pceNum){
             sq = pos->pList[piece][pceNum];
             ASSERT(SqOnBoard(sq));
-            printf("Piece:%c on %s\n", PceChar[piece], PrSq(sq));
 
             for(index = 0; index < NumDir[piece]; ++index){
                 dir = PceDir[piece][index];
@@ -239,12 +237,10 @@ void GenerateAllMoves(const BOARD *pos, MOVELIST *list){
     piece = LoopNonSlidePce[pceIndex++];
     while( piece != 0){
         ASSERT(PieceValid(piece));
-        printf("non sliders pceIndex:%d pce:%d\n", pceIndex, piece);
 
         for(pceNum = 0; pceNum < pos->pceNum[piece]; ++pceNum){
             sq = pos->pList[piece][pceNum];
             ASSERT(SqOnBoard(sq));
-            printf("Piece:%c on %s\n", PceChar[piece], PrSq(sq));
 
             for(index = 0; index < NumDir[piece]; ++index){
                 dir = PceDir[piece][index];

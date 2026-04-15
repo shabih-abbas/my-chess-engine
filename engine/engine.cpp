@@ -9,6 +9,7 @@
 #define FEN6 "6k1/1b6/4n3/8/1n4B1/1B3N2/1N6/2b3K1 b - - 0 1"
 #define FEN7 "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"
 #define FEN8 "3rk2r/8/8/8/8/8/6p1/R3K2R b KQk - 0 1"
+#define PERFTFEN "r3k2r/p1pp"
 
 void ShowSqAtBySide(const int side, const BOARD *pos){
     int rank = 0;
@@ -32,15 +33,12 @@ void ShowSqAtBySide(const int side, const BOARD *pos){
 
 int main(){
     AllInit();
+ 
+    BOARD board[1];
+    MOVELIST list[1];
 
-    // BOARD board[1];
-
-    // ParseFen(FEN1, board);
-
-    // MOVELIST list[1];
-
-    // GenerateAllMoves(board, list);
-    // PrintMoveList(list);
-
+    ParseFen(FEN1, board);
+    PerftTest(4, board);
+    
     return 0;
 }
