@@ -245,9 +245,11 @@ void ResetBoard(BOARD *pos) {
 
     pos->castlePerm = 0;
     pos->posKey = 0ULL;
+
+    InitPvTable(pos->PvTable);
 }
 
-extern void PrintBoard(const BOARD *pos){
+void PrintBoard(const BOARD *pos){
     int sq, file, rank, piece;
 
     printf("\nGame Board:\n\n");

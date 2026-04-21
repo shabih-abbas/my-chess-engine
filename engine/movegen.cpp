@@ -27,6 +27,23 @@ const int PceDir[13][8]{
 };
 
 int NumDir[13] = {0, 0, 8, 4, 4, 8, 8, 0, 8, 4, 4, 8, 8};
+
+int MoveExists(BOARD *pos, const int move){
+    MOVELIST list[1];
+    GenerateAllMoves(pos, list);
+
+    int MoveNum = 0;
+    for(MoveNum = 0; MoveNum < list->count; ++MoveNum){
+        if(!MakeMove(pos, list->moves[MoveNum].move)){
+            continue;
+        }
+        TakeMove(pos);
+        if(list->moves[MoveNum].move == move){
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
 static void AddQuietMove(const BOARD *pos, int move, MOVELIST *list) {
     list->moves[list->count].move = move;
     list->moves[list->count].score = 0;

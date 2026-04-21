@@ -3,7 +3,7 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-// #define DEBUG
+#define DEBUG
 #ifndef DEBUG
 #define ASSERT(n)
 #else
@@ -22,7 +22,9 @@ typedef unsigned long long U64;
 #define BRD_SQRS 120
 #define MAXGAMEMOVES 2048
 #define MAXPOSITIONMOVES 256
+#define MAXDEPTH 64
 #define OFFBOARD -1
+#define NOMOVE 0
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 enum {EMPTY, wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK};
@@ -57,6 +59,16 @@ typedef struct{
 } MOVELIST;
 
 typedef struct {
+    U64 posKey;
+    int move;
+} PVENTRY;
+
+typedef struct {
+    PVENTRY *pTable;
+    int numEntries;
+} PVTABLE;
+
+typedef struct {
     int move;
     int castlePerm;
     int enPas;
@@ -82,6 +94,8 @@ typedef struct {
     int material[2];
     UNDO history[MAXGAMEMOVES];
     int pList[13][10];
+    PVTABLE PvTable[1];
+    int PvArray[MAXDEPTH];
 } BOARD;
 
 // MACROS
@@ -170,6 +184,7 @@ extern int SqAttacked(const int sq, const int side, const BOARD *pos);
 extern char *PrMove(const int move);
 extern char *PrSq(const int sq);
 extern void PrintMoveList(const MOVELIST *list);
+extern int ParseMove(char *ptrChar, BOARD *pos);
 // validate
 extern int SqOnBoard(const int sq);
 extern int SideValid(const int side);
@@ -177,10 +192,21 @@ extern int FileRankValid(const int fr);
 extern int PieceValidEmpty(const int piece);
 extern int PieceValid(const int piece);
 //movegen
+extern int MoveExists(BOARD *pos, const int move);
 extern void GenerateAllMoves(const BOARD *pos, MOVELIST *list);
 //makemove
 extern int MakeMove(BOARD *pos, int move);
 extern void TakeMove(BOARD *pos);
 //perft
 extern void PerftTest(int depth, BOARD *pos);
+//search
+extern void SearchPosition(BOARD *pos);
+extern int IsRepetition(const BOARD *pos);
+//misc
+extern int GetTimeMs();
+//pvTable
+extern void InitPvTable(PVTABLE *table);
+extern void StorePvMove(const BOARD *pos, const int move);
+extern int ProbePvTable(const BOARD *pos);
+extern int GetPvLine(const int depth, BOARD *pos);
 #endif
