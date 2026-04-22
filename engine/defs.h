@@ -26,6 +26,7 @@ typedef unsigned long long U64;
 #define OFFBOARD -1
 #define NOMOVE 0
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+#define INFINITE 30000
 
 enum {EMPTY, wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK};
 enum {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NONE};
@@ -96,7 +97,26 @@ typedef struct {
     int pList[13][10];
     PVTABLE PvTable[1];
     int PvArray[MAXDEPTH];
+    int searchHistory[13][BRD_SQRS];
+    int searchKillers[2][MAXDEPTH];
 } BOARD;
+
+typedef struct{
+    int starttime;
+    int stoptime;
+    int depth;
+    int depthset;
+    int timeset;
+    int movestogo;
+    int infinite;
+    long nodes;
+
+    int quit;
+    int stopped;
+
+    float fh;
+    float fhf;
+} SEARCHINFO;
 
 // MACROS
 /* MOVE
@@ -200,13 +220,16 @@ extern void TakeMove(BOARD *pos);
 //perft
 extern void PerftTest(int depth, BOARD *pos);
 //search
-extern void SearchPosition(BOARD *pos);
-extern int IsRepetition(const BOARD *pos);
+extern void SearchPosition(BOARD *pos, SEARCHINFO *info);
+// extern int IsRepetition(const BOARD *pos);
 //misc
 extern int GetTimeMs();
 //pvTable
 extern void InitPvTable(PVTABLE *table);
+extern void ClearPvTable(PVTABLE *table);
 extern void StorePvMove(const BOARD *pos, const int move);
 extern int ProbePvTable(const BOARD *pos);
 extern int GetPvLine(const int depth, BOARD *pos);
+//evaluate
+extern int EvalPosition(const BOARD *pos);
 #endif
