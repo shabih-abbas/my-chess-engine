@@ -3,7 +3,7 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-#define DEBUG
+// #define DEBUG
 #ifndef DEBUG
 #define ASSERT(n)
 #else
@@ -214,6 +214,8 @@ extern int PieceValid(const int piece);
 //movegen
 extern int MoveExists(BOARD *pos, const int move);
 extern void GenerateAllMoves(const BOARD *pos, MOVELIST *list);
+extern void GenerateAllCaps(const BOARD *pos, MOVELIST *list);
+extern int InitMvvLva();
 //makemove
 extern int MakeMove(BOARD *pos, int move);
 extern void TakeMove(BOARD *pos);
