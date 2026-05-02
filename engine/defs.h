@@ -19,6 +19,7 @@ exit(1);}
 
 typedef unsigned long long U64;
 
+#define NAME "My Chess Engine"
 #define BRD_SQRS 120
 #define MAXGAMEMOVES 2048
 #define MAXPOSITIONMOVES 256
@@ -226,6 +227,7 @@ extern void SearchPosition(BOARD *pos, SEARCHINFO *info);
 // extern int IsRepetition(const BOARD *pos);
 //misc
 extern int GetTimeMs();
+extern void ReadInput(SEARCHINFO *info);
 //pvTable
 extern void InitPvTable(PVTABLE *table);
 extern void ClearPvTable(PVTABLE *table);
@@ -234,4 +236,6 @@ extern int ProbePvTable(const BOARD *pos);
 extern int GetPvLine(const int depth, BOARD *pos);
 //evaluate
 extern int EvalPosition(const BOARD *pos);
+//uci
+extern void Uci_Loop();
 #endif
