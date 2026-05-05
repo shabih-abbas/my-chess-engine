@@ -86,19 +86,16 @@ void ParsePosition(char* lineIn, BOARD *pos){
     PrintBoard(pos);
 }
 
-void Uci_Loop(){
+void Uci_Loop(BOARD *pos, SEARCHINFO *info){
     setbuf(stdin, NULL);
     setbuf(stdout, NULL);
 
+    info->GAME_MODE = UCIMODE;
+    info->POST_THINKING = TRUE;
     char line[INPUTBUFFER];
     printf("id name %s\n", NAME);
     printf("id author BC240222418\n");
     printf("uciok\n");
-
-    BOARD pos[1];
-    pos->PvTable->pTable = NULL;
-    SEARCHINFO info[1];
-    InitPvTable(pos->PvTable);
 
     while(TRUE){
         memset(&line[0], 0, sizeof(line));
@@ -124,5 +121,4 @@ void Uci_Loop(){
         }
         if(info->quit) break;
     }
-    free(pos->PvTable->pTable);
 }

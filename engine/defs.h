@@ -34,6 +34,7 @@ enum {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NONE}
 enum {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_NONE};
 
 enum {WHITE, BLACK, BOTH};
+enum {UCIMODE, XBOARDMODE, CONSOLEMODE};
 
 enum {
     A1 = 21, B1, C1, D1, E1, F1, G1, H1,
@@ -117,6 +118,9 @@ typedef struct{
 
     float fh;
     float fhf;
+
+    int GAME_MODE;
+    int POST_THINKING;
 } SEARCHINFO;
 
 // MACROS
@@ -237,5 +241,8 @@ extern int GetPvLine(const int depth, BOARD *pos);
 //evaluate
 extern int EvalPosition(const BOARD *pos);
 //uci
-extern void Uci_Loop();
+extern void Uci_Loop(BOARD *pos, SEARCHINFO *info);
+//xboard
+extern void XBoard_Loop(BOARD *pos, SEARCHINFO *info);
+extern void Console_Loop(BOARD *pos, SEARCHINFO *info);
 #endif

@@ -139,7 +139,7 @@ static int AlphaBeta(int alpha, int beta, int depth, BOARD *pos, SEARCHINFO *inf
     }
     info->nodes++;
 
-    if(IsRepetition(pos) || pos->fiftyMoves >= 100) {
+    if((IsRepetition(pos) || pos->fiftyMoves >= 100) && pos->ply) {
         return 0;
     }
 
@@ -229,16 +229,30 @@ void SearchPosition(BOARD *pos, SEARCHINFO *info){
         }
         pvMoves = GetPvLine(currentDepth, pos);
         bestMove = pos->PvArray[0];
-        
-        printf("info score cp %d depth %d nodes %ld time %d", bestScore, currentDepth, info->nodes, GetTimeMs() - info->starttime);
-
-        pvMoves = GetPvLine(currentDepth, pos);
-        printf("pv");
-        for(pvNum = 0; pvNum < pvMoves; ++pvNum){
-            printf(" %s", PrMove(pos->PvArray[pvNum]));
+        if(info->GAME_MODE == UCIMODE){
+            printf("info score cp %d depth %d nodes %ld time %d", bestScore, currentDepth, info->nodes, GetTimeMs() - info->starttime);
+        } else if(info->GAME_MODE == XBOARDMODE && info->POST_THINKING == TRUE){
+            printf("%d %d %d %ld", currentDepth, bestScore, (GetTimeMs() - info->starttime)/10, info->nodes);
+        } else if(info->POST_THINKING == TRUE){
+            printf("score:%d depth:%d nodes:%ld time:%d(ms)", bestScore, currentDepth, info->nodes, GetTimeMs() - info->starttime);
         }
-        printf("\n");
-        // printf("Ordering:%.2f\n", (info->fhf/info->fh));
+        if(info->GAME_MODE == UCIMODE || info->POST_THINKING == TRUE){
+            pvMoves = GetPvLine(currentDepth, pos);
+            printf("pv");
+            for(pvNum = 0; pvNum < pvMoves; ++pvNum){
+                printf(" %s", PrMove(pos->PvArray[pvNum]));
+            }
+            printf("/n");
+        }
     }
-    printf("bestmove %s\n", PrMove(bestMove));
+    if(info->GAME_MODE == UCIMODE){
+        printf("bestmove %s\n", PrMove(bestMove));
+    } else if(info->GAME_MODE == XBOARDMODE){
+        printf("move %s\n", PrMove(bestMove));
+        MakeMove(pos, bestMove);
+    } else{
+        printf("\n\n***!! engine makes move %s !!***\n\n", PrMove(bestMove));
+        MakeMove(pos, bestMove);
+        PrintBoard(pos);
+    }
 }
