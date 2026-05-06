@@ -20,7 +20,7 @@ createRoot(document.getElementById('root')).render(
           <Route path='register' element={<Register />} />
           <Route path='dashboard' element={<Dashboard />} />
           <Route path='game-setup' element={<GameSetup />} />
-          <Route path='play/:userColor' element={<Play />} />
+          <Route path='play' element={<Play />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

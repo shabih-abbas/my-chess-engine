@@ -5,11 +5,11 @@ const moveSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  fromSquare: {
+  from: {
     type: String,
     required: true
   },
-  toSquare: {
+  to: { 
     type: String,
     required: true
   },
@@ -17,8 +17,16 @@ const moveSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  promotion: {
+    type: String,
+    default: ''
+  },
   notation: {
     type: String,
+    required: true
+  },
+  fenAfter: {
+    type: String, 
     required: true
   }
 }, { _id: false });
@@ -34,22 +42,34 @@ const gameSchema = new mongoose.Schema({
     enum: ['white', 'black'],
     required: true
   },
+  opening: { 
+    type: String,
+    default: 'Standard'
+  },
+  currentFen: { 
+    type: String,
+    default: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+  },
+  status: { 
+    type: String,
+    enum: ['in-progress', 'completed', 'aborted', 'resigned'],
+    default: 'in-progress'
+  },
+  result: { 
+    type: String,
+    enum: ['white', 'black', 'draw', null],
+    default: null
+  },
+  moves: [moveSchema],
   startTime: {
     type: Date,
     default: Date.now
   },
   endTime: {
     type: Date
-  },
-  result: {
-    type: String,
-    enum: ['win', 'loss', 'draw', 'in-progress'],
-    default: 'in-progress'
-  },
-  moves: [moveSchema]
+  }
 }, {
   timestamps: true
 });
-
 const Game = mongoose.model('Game', gameSchema);
 export default Game;

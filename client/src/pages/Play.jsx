@@ -1,52 +1,112 @@
-import { useState } from "react";
-import { useParams, Link } from "react-router";
+import { useState, useEffect } from "react";
+import { useSearchParams, Link } from "react-router";
+import { io } from "socket.io-client";
+import toast, { Toaster } from "react-hot-toast"; 
 import Board from "../components/Board";
 import UserAvatar from "../components/userAvatar";
 import EngineAvatar from "../components/engineAvatar";
 import ResultModal from "../components/ResultModal";
 
 export default function Play() {
-  const params = useParams();
-  const userColor = ['white', 'black'].includes(params.userColor) ? params.userColor : 'white';
+  const [searchParams] = useSearchParams();
+  const [socket, setSocket] = useState(null);
+  
+  const userColor = ['white', 'black'].includes(searchParams.get('color')) 
+    ? searchParams.get('color') 
+    : 'white';
+  
+  const opening = searchParams.get("opening") || "Sicilian Defense";
   const [turn, setTurn] = useState(userColor === 'white' ? 'user' : 'engine');
   const [gameResult, setGameResult] = useState(null);
 
-  return (
-    <main className="h-screen w-full bg-chess-board flex flex-row p-4 lg:p-8 overflow-hidden relative">
-      
-      <div className="flex flex-col justify-between w-64 shrink-0 h-full border-r border-white/5 pr-6">
-        
-        <div className="flex gap-y-8 flex-col grow">
-          <div className="flex flex-col justify-between grow">
-            <div className={`transition-opacity duration-500 ${turn === 'engine' ? 'opacity-100' : 'opacity-40'}`}>
-                <EngineAvatar isEngineMove={turn === 'engine'} />
-            </div>
+  useEffect(() => {
+    const newSocket = io();
+    setSocket(newSocket);
 
-            <div className={`transition-opacity duration-500 ${turn === 'user' ? 'opacity-100' : 'opacity-40'}`}>
-                <UserAvatar isUserMove={turn === 'user'} />
-            </div>
+    newSocket.on("guest:error", (msg) => {
+      toast.error(msg, {
+        style: { borderRadius: '8px', background: '#333', color: '#fff', border: '1px solid #ef4444' },
+      });
+    });
+
+    newSocket.on("connect_error", () => {
+      toast.error("Lost connection to chess server.");
+    });
+
+    return () => {
+      newSocket.off("guest:error");
+      newSocket.off("connect_error");
+      newSocket.close();
+    };
+  }, []);
+
+  return (
+    <main className="h-screen w-full bg-chess-board flex flex-col lg:flex-row p-4 lg:p-8 overflow-hidden relative">
+      <Toaster position="top-right" reverseOrder={false} />
+
+      <div className="flex flex-row lg:flex-col justify-between w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-white/5 pb-4 lg:pb-0 lg:pr-6 mb-4 lg:mb-0">
+        <div className="flex flex-row lg:flex-col gap-x-4 lg:gap-y-8 grow items-center lg:items-stretch">
+          <div className={`flex-1 transition-opacity duration-500 ${turn === 'engine' ? 'opacity-100' : 'opacity-40'}`}>
+            <EngineAvatar isEngineMove={turn === 'engine'} />
+            {turn === 'engine' && !gameResult && (
+              <p className="hidden lg:block text-chess-gold text-[10px] mt-2 animate-pulse uppercase tracking-widest text-center">
+                Engine is thinking...
+              </p>
+            )}
           </div>
-            <div className="flex flex-col gap-3 mt-6">
-              <Link 
-                to='/' 
-                className="w-full text-center py-2.5 rounded font-bold border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-all text-xs uppercase tracking-widest"
-              >
-                Abort
-              </Link>
-              <Link 
-                to='/' 
-                className="w-full text-center py-2.5 rounded font-bold bg-red-950/20 text-red-500 border border-red-500/20 hover:bg-red-600 hover:text-white transition-all text-xs uppercase tracking-widest"
-              >
-                Resign
-              </Link>
+
+          <div className={`flex-1 transition-opacity duration-500 ${turn === 'user' ? 'opacity-100' : 'opacity-40'}`}>
+            <UserAvatar isUserMove={turn === 'user'} />
           </div>
+        </div>
+
+        <div className="hidden lg:flex flex-col gap-3 mt-6">
+          <button 
+            onClick={() => setGameResult("Aborted")} 
+            className="w-full text-center py-2.5 rounded font-bold border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-all text-xs uppercase tracking-widest"
+          >
+            Abort
+          </button>
+          <button 
+            onClick={() => setGameResult("You Resigned")} 
+            className="w-full text-center py-2.5 rounded font-bold bg-red-950/20 text-red-500 border border-red-500/20 hover:bg-red-600 hover:text-white transition-all text-xs uppercase tracking-widest"
+          >
+            Resign
+          </button>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center h-full">
-        <div className="relative p-2 bg-chess-wood-light rounded-sm shadow-2xl border-[4px] border-chess-gold-dark aspect-square">
-           <Board userColor={userColor} setTurn={setTurn} onGameOver={setGameResult} />
+      <div className="flex-1 flex items-center justify-center min-h-0 overflow-hidden">
+        <div className="relative p-1 lg:p-2 bg-chess-wood-light rounded-sm shadow-2xl border-[2px] lg:border-[3px] border-chess-gold-dark max-w-full max-h-full">
+          {socket ? (
+            <Board 
+              socket={socket}
+              userColor={userColor} 
+              selectedOpening={opening}
+              setTurn={setTurn} 
+              onGameOver={setGameResult} 
+            />
+          ) : (
+            <div className="w-[80vw] lg:w-[600px] aspect-square flex items-center justify-center text-chess-gold animate-pulse uppercase tracking-widest font-bold text-xs lg:text-base">
+              Establishing Connection...
+            </div>
+          )}
         </div>
+      </div>
+
+      <div className="lg:hidden flex flex-row gap-3 mt-4 w-full">
+        <button 
+          onClick={() => setGameResult("Aborted")} 
+          className="flex-1 text-center py-3 rounded font-bold border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-all text-[10px] uppercase tracking-widest"
+        >
+          Abort
+        </button>
+        <button 
+          onClick={() => setGameResult("You Resigned")} 
+          className="flex-1 text-center py-3 rounded font-bold bg-red-950/20 text-red-500 border border-red-500/20 hover:bg-red-600 hover:text-white transition-all text-[10px] uppercase tracking-widest"
+        >
+          Resign
+        </button>
       </div>
 
       {gameResult && <ResultModal result={gameResult} />}

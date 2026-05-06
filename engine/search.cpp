@@ -238,11 +238,11 @@ void SearchPosition(BOARD *pos, SEARCHINFO *info){
         }
         if(info->GAME_MODE == UCIMODE || info->POST_THINKING == TRUE){
             pvMoves = GetPvLine(currentDepth, pos);
-            printf("pv");
+            printf(" pv");
             for(pvNum = 0; pvNum < pvMoves; ++pvNum){
                 printf(" %s", PrMove(pos->PvArray[pvNum]));
             }
-            printf("/n");
+            printf("\n");
         }
     }
     if(info->GAME_MODE == UCIMODE){

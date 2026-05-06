@@ -1,8 +1,8 @@
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-export default function Board({ userColor, setTurn, onGameOver }) {
+export default function Board({ socket, userColor, selectedOpening, setTurn, onGameOver }) {
   const gameRef = useRef(new Chess());
   const game = gameRef.current;
 
@@ -11,30 +11,39 @@ export default function Board({ userColor, setTurn, onGameOver }) {
   const [optionSquares, setOptionSquares] = useState({});
   const [isEngineTurn, setIsEngineTurn] = useState(userColor === "black");
 
+  const checkGameOver = useCallback(() => {
+    if (game.isGameOver()) {
+      let result = "Draw";
+      if (game.isCheckmate())
+        result = game.turn() === "w" ? "Black Wins" : "White Wins";
+      onGameOver(result);
+      return true;
+    }
+    return false;
+  }, [onGameOver]);
+
   useEffect(() => {
-    if (!isEngineTurn) return;
+    socket.emit("guest:start_game", { 
+      openingName: selectedOpening, 
+      userColor: userColor 
+    });
 
-    if (game.isGameOver()) return;
-
-    setTurn("engine");
-    const timer = setTimeout(() => {
-      const moves = game.moves({ verbose: true });
-      const move = moves[Math.floor(Math.random() * moves.length)];
-      game.move(move);
-      setPosition(game.fen());
-      setIsEngineTurn(false);
-      setTurn("user");
-
-      if (game.isGameOver()) {
-        let result = "Draw";
-        if (game.isCheckmate())
-          result = game.turn() === "w" ? "Black Wins" : "White Wins";
-        onGameOver(result);
+    socket.on("guest:engine_move", ({ move }) => {
+      try {
+        game.move(move);
+        setPosition(game.fen());
+        setIsEngineTurn(false);
+        setTurn("user");
+        checkGameOver();
+      } catch (e) {
+        console.error("Invalid move received from engine:", move);
       }
-    }, 600);
+    });
 
-    return () => clearTimeout(timer);
-  }, [isEngineTurn]);
+    return () => {
+      socket.off("guest:engine_move");
+    };
+  }, [socket, selectedOpening, userColor, setTurn, checkGameOver]);
 
   function getMoveOptions(square) {
     const moves = game.moves({ square, verbose: true });
@@ -60,30 +69,26 @@ export default function Board({ userColor, setTurn, onGameOver }) {
     return true;
   }
 
-  function afterUserMove() {
+  function afterUserMove(move) {
     setPosition(game.fen());
     setMoveFrom("");
     setOptionSquares({});
+    setTurn("engine");
 
-    if (game.isGameOver()) {
-      let result = "Draw";
-      if (game.isCheckmate())
-        result = game.turn() === "w" ? "Black Wins" : "White Wins";
-      onGameOver(result);
-      return;
-    }
+    if (checkGameOver()) return;
 
     setIsEngineTurn(true);
+    const moveString = move.from + move.to + (move.promotion || "");
+    socket.emit("guest:move", moveString);
   }
 
-  function handleSquareClick({ square }) {
+  function onSquareClick({ square, piece }) {
     if (game.isGameOver() || isEngineTurn) return;
-    const isUserTurn = game.turn() === userColor[0];
+    if (game.turn() !== userColor[0]) return;
 
     if (!moveFrom) {
-      if (!isUserTurn) return;
-      const piece = game.get(square);
-      if (!piece || piece.color !== userColor[0]) return;
+      const currentPiece = game.get(square);
+      if (!currentPiece || currentPiece.color !== userColor[0]) return;
       const hasMoves = getMoveOptions(square);
       if (hasMoves) setMoveFrom(square);
       return;
@@ -93,8 +98,8 @@ export default function Board({ userColor, setTurn, onGameOver }) {
     const found = moves.find((m) => m.from === moveFrom && m.to === square);
 
     if (!found) {
-      const piece = game.get(square);
-      if (piece && piece.color === userColor[0] && isUserTurn) {
+      const currentPiece = game.get(square);
+      if (currentPiece && currentPiece.color === userColor[0]) {
         const hasMoves = getMoveOptions(square);
         setMoveFrom(hasMoves ? square : "");
       } else {
@@ -105,17 +110,15 @@ export default function Board({ userColor, setTurn, onGameOver }) {
     }
 
     try {
-      game.move({ from: moveFrom, to: square, promotion: "q" });
+      const move = game.move({ from: moveFrom, to: square, promotion: "q" });
+      afterUserMove(move);
     } catch {
-      const hasMoves = getMoveOptions(square);
-      setMoveFrom(hasMoves ? square : "");
-      return;
+      setMoveFrom("");
+      setOptionSquares({});
     }
-
-    afterUserMove();
   }
 
-  function handlePieceDrop(sourceSquare, targetSquare, piece) {
+  function onPieceDrop({ sourceSquare, targetSquare, piece }) {
     if (game.isGameOver() || isEngineTurn) return false;
     if (game.turn() !== userColor[0]) return false;
 
@@ -126,40 +129,34 @@ export default function Board({ userColor, setTurn, onGameOver }) {
         promotion: "q",
       });
       if (!move) return false;
+      afterUserMove(move);
+      return true;
     } catch {
       return false;
     }
-
-    afterUserMove();
-    return true;
+  }
+  function canDragPiece({piece}){
+    if(game.isGameOver() || isEngineTurn) return false;
+    return game.turn() === userColor[0] && piece.pieceType[0] === userColor[0];
   }
 
-  function canDragPiece(piece, sourceSquare) {
-    if (game.isGameOver() || isEngineTurn) return false;
-    return piece[0] === userColor[0];
+  const chessBoardOptions = {
+    position,
+    canDragPiece,
+    onSquareClick,
+    onPieceDrop,
+    boardOrientation: userColor,
+    squareStyles: optionSquares,
+    animationDurationInMs: 300,
+    darkSquareStyle: { backgroundColor: "var(--color-board-dark)" },
+    lightSquareStyle: { backgroundColor: "var(--color-board-light)" },
+    dropSquareStyle: {boxShadow: "inset 0 0 1px 4px rgba(255,255,255,0.4)"},
   }
 
   return (
-    <div className="w-[90vw] max-w-[600px] aspect-square">
+    <div className="w-[90vw] sm:w-[80vw] lg:w-[70vh] aspect-square shadow-2xl relative">
       <Chessboard
-        options={{
-          position,
-          boardOrientation: userColor,
-          squareStyles: optionSquares,
-          onSquareClick: handleSquareClick,
-          onPieceDrop: handlePieceDrop,
-          canDragPiece,
-          allowDragging: true,
-          allowDrawingArrows: true,
-          clearArrowsOnClick: true,
-          showAnimations: true,
-          animationDurationInMs: 200,
-          darkSquareStyle: { backgroundColor: "var(--color-board-dark)" },
-          lightSquareStyle: { backgroundColor: "var(--color-board-light)" },
-          dropSquareStyle: {
-            boxShadow: "inset 0 0 1px 4px rgba(255,255,255,0.4)",
-          },
-        }}
+        options={chessBoardOptions}
       />
     </div>
   );
