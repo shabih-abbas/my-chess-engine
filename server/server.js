@@ -6,7 +6,8 @@ import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import gameRoutes from './routes/gameRoutes.js';
-import { registerGuestHandlers } from './socket/guestHandler.js';
+import registerGuestHandlers from './socket/guestHandler.js';
+import registeredHandler from './socket/registeredHandler.js';
 
 dotenv.config();
 connectDB();
@@ -25,6 +26,7 @@ app.use('/api/games', gameRoutes);
 
 io.on('connection', (socket) => {
     registerGuestHandlers(io, socket);
+    registeredHandler(io, socket);
     
     socket.on('disconnect', () => {
         console.log(`Guest disconnected: ${socket.id}`);

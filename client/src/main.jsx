@@ -21,6 +21,7 @@ createRoot(document.getElementById('root')).render(
           <Route path='dashboard' element={<Dashboard />} />
           <Route path='game-setup' element={<GameSetup />} />
           <Route path='play' element={<Play />} />
+          <Route path='play/:id' element={<Play />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, Link } from "react-router";
+import { useSearchParams, useParams, useNavigate } from "react-router";
 import { io } from "socket.io-client";
 import toast, { Toaster } from "react-hot-toast"; 
 import Board from "../components/Board";
@@ -9,36 +9,90 @@ import ResultModal from "../components/ResultModal";
 
 export default function Play() {
   const [searchParams] = useSearchParams();
+  const { id: gameId } = useParams();
+  const navigate = useNavigate();
+  
   const [socket, setSocket] = useState(null);
+  const [gameData, setGameData] = useState({
+    userColor: 'white',
+    opening: 'Sicilian Defense',
+    isLoaded: false
+  });
   
-  const userColor = ['white', 'black'].includes(searchParams.get('color')) 
-    ? searchParams.get('color') 
-    : 'white';
-  
-  const opening = searchParams.get("opening") || "Sicilian Defense";
-  const [turn, setTurn] = useState(userColor === 'white' ? 'user' : 'engine');
+  const [turn, setTurn] = useState('white');
   const [gameResult, setGameResult] = useState(null);
 
   useEffect(() => {
-    const newSocket = io();
+    if (gameId) {
+      const fetchGame = async () => {
+        try {
+          const res = await fetch(`/api/games/${gameId}`, { credentials: 'include' });
+          const data = await res.json();
+          if (res.ok) {
+            setGameData({
+              userColor: data.playerColor,
+              opening: data.opening,
+              isLoaded: true
+            });
+          } else {
+            toast.error("Could not load game.");
+            navigate("/setup");
+          }
+        } catch (err) {
+          toast.error("Connection error.");
+        }
+      };
+      fetchGame();
+    } else {
+      setGameData({
+        userColor: ['white', 'black'].includes(searchParams.get('color')) ? searchParams.get('color') : 'white',
+        opening: searchParams.get("opening") || "Sicilian Defense",
+        isLoaded: true
+      });
+    }
+  }, [gameId, searchParams, navigate]);
+
+  useEffect(() => {
+    const newSocket = io({
+        withCredentials: true 
+    });
     setSocket(newSocket);
 
-    newSocket.on("guest:error", (msg) => {
-      toast.error(msg, {
-        style: { borderRadius: '8px', background: '#333', color: '#fff', border: '1px solid #ef4444' },
-      });
-    });
-
-    newSocket.on("connect_error", () => {
-      toast.error("Lost connection to chess server.");
-    });
+    newSocket.on("guest:error", (msg) => toast.error(msg));
+    newSocket.on("game:error", (msg) => toast.error(msg));
+    newSocket.on("connect_error", () => toast.error("Lost connection to server."));
+    newSocket.on("game:aborted_success", () => setGameResult("Aborted"));
 
     return () => {
-      newSocket.off("guest:error");
-      newSocket.off("connect_error");
       newSocket.close();
     };
   }, []);
+
+  useEffect(() => {
+    if (socket && gameId && gameData.isLoaded) {
+        socket.emit("game:join", { gameId });
+    }
+  }, [socket, gameId, gameData.isLoaded]);
+
+  async function abortGame(gameId) {
+  if (!gameId) {
+    setGameResult("Aborted");
+    return;
+  }
+
+  socket.emit("game:abort", { gameId });
+}
+
+async function resignGame(gameId, winner) {
+  if (!gameId) {
+    setGameResult(`${winner.charAt(0).toUpperCase() + winner.slice(1)} Wins by Resignation`);
+    return;
+  }
+
+  socket.emit("game:resign", { gameId, winner });
+}
+
+  if (!gameData.isLoaded) return null;
 
   return (
     <main className="h-screen w-full bg-chess-board flex flex-col lg:flex-row p-4 lg:p-8 overflow-hidden relative">
@@ -62,13 +116,13 @@ export default function Play() {
 
         <div className="hidden lg:flex flex-col gap-3 mt-6">
           <button 
-            onClick={() => setGameResult("Aborted")} 
+            onClick={() => abortGame(gameId)} 
             className="w-full text-center py-2.5 rounded font-bold border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-all text-xs uppercase tracking-widest"
           >
             Abort
           </button>
           <button 
-            onClick={() => setGameResult("You Resigned")} 
+            onClick={() => resignGame(gameId, gameData.userColor === 'white'? 'black' : 'white')} 
             className="w-full text-center py-2.5 rounded font-bold bg-red-950/20 text-red-500 border border-red-500/20 hover:bg-red-600 hover:text-white transition-all text-xs uppercase tracking-widest"
           >
             Resign
@@ -80,9 +134,10 @@ export default function Play() {
         <div className="relative p-1 lg:p-2 bg-chess-wood-light rounded-sm shadow-2xl border-[2px] lg:border-[3px] border-chess-gold-dark max-w-full max-h-full">
           {socket ? (
             <Board 
+              gameId={gameId} 
               socket={socket}
-              userColor={userColor} 
-              selectedOpening={opening}
+              userColor={gameData.userColor} 
+              selectedOpening={gameData.opening}
               setTurn={setTurn} 
               onGameOver={setGameResult} 
             />
@@ -95,18 +150,8 @@ export default function Play() {
       </div>
 
       <div className="lg:hidden flex flex-row gap-3 mt-4 w-full">
-        <button 
-          onClick={() => setGameResult("Aborted")} 
-          className="flex-1 text-center py-3 rounded font-bold border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-all text-[10px] uppercase tracking-widest"
-        >
-          Abort
-        </button>
-        <button 
-          onClick={() => setGameResult("You Resigned")} 
-          className="flex-1 text-center py-3 rounded font-bold bg-red-950/20 text-red-500 border border-red-500/20 hover:bg-red-600 hover:text-white transition-all text-[10px] uppercase tracking-widest"
-        >
-          Resign
-        </button>
+        <button onClick={() => setGameResult("Aborted")} className="flex-1 text-center py-3 rounded font-bold border border-white/10 text-white/60 text-[10px] uppercase tracking-widest">Abort</button>
+        <button onClick={() => setGameResult("You Resigned")} className="flex-1 text-center py-3 rounded font-bold bg-red-950/20 text-red-500 border border-red-500/20 text-[10px] uppercase tracking-widest">Resign</button>
       </div>
 
       {gameResult && <ResultModal result={gameResult} />}

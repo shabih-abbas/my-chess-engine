@@ -60,3 +60,53 @@ export const createGame = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+export const deleteGame = async (req, res) => {
+  try {
+    const game = await Game.findOneAndDelete({ 
+      _id: req.params.id, 
+      userId: req.user._id 
+    });
+
+    if (!game) {
+      return res.status(404).json({ message: "Game not found or unauthorized." });
+    }
+    res.status(200).json({ message: "Game deleted successfully" });
+  } catch (err) {
+    console.error(`[DeleteGame Error]: ${err.message}`);
+    res.status(500).json({ message: "Internal server error. Please try again later." });
+  }
+};
+
+export const resignGame = async (req, res) => {
+  try {
+    const { gameId, winner } = req.body;
+
+    if (!gameId || !winner) {
+      return res.status(400).json({ message: "Game ID and winner are required." });
+    }
+    const game = await Game.findOneAndUpdate(
+      { 
+        _id: gameId, 
+        userId: req.user._id, 
+        status: "in-progress" 
+      },
+      { 
+        status: "completed",
+        result: winner
+      },
+      { new: true } 
+    );
+
+    if (!game) {
+      return res.status(404).json({ 
+        message: "Could not resign. Game may already be finished or unauthorized." 
+      });
+    }
+
+    res.status(200).json({ message: "Resignation processed.", game });
+
+  } catch (err) {
+    console.error(`[ResignGame Error]: ${err.message}`);
+    res.status(500).json({ message: "Database error. Please try again later." });
+  }
+};

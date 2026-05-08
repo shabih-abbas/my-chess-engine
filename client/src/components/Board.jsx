@@ -2,48 +2,111 @@ import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { useState, useEffect, useRef, useCallback } from "react";
 
-export default function Board({ socket, userColor, selectedOpening, setTurn, onGameOver }) {
+export default function Board({ socket, userColor, selectedOpening, setTurn, onGameOver, gameId = null }) {
   const gameRef = useRef(new Chess());
   const game = gameRef.current;
 
   const [position, setPosition] = useState(game.fen());
   const [moveFrom, setMoveFrom] = useState("");
   const [optionSquares, setOptionSquares] = useState({});
-  const [isEngineTurn, setIsEngineTurn] = useState(userColor === "black");
+  const [isEngineTurn, setIsEngineTurn] = useState(false);
 
-  const checkGameOver = useCallback(() => {
-    if (game.isGameOver()) {
-      let result = "Draw";
-      if (game.isCheckmate())
-        result = game.turn() === "w" ? "Black Wins" : "White Wins";
+  const syncWithServer = useCallback((fen) => {
+    game.load(fen);
+    setPosition(game.fen());
+    
+    const turn = game.turn() === userColor[0] ? "user" : "engine";
+    setTurn(turn);
+    setIsEngineTurn(turn === "engine");
+  }, [game, userColor, setTurn]);
+
+  const checkGameOver = useCallback((manualResult = null) => {
+    if (game.isGameOver() || manualResult) {
+      let result = manualResult;
+      if (!result) {
+        if (game.isCheckmate())
+          result = game.turn() === "w" ? "Black Wins" : "White Wins";
+        else result = "Draw";
+      }
       onGameOver(result);
       return true;
     }
     return false;
-  }, [onGameOver]);
+  }, [game, onGameOver]);
+
+  const getKingCheckStyle = useCallback(() => {
+  if (!game.inCheck()) return {};
+
+  const board = game.board();
+  let kingSquare = "";
+
+  board.forEach((row) => {
+    row.forEach((square) => {
+      if (square && square.type === "k" && square.color === game.turn()) {
+        kingSquare = square.square;
+      }
+    });
+  });
+
+  if (kingSquare) {
+    return {
+      [kingSquare]: {
+        background: "radial-gradient(circle, rgba(255,0,0,.6) 0%, transparent 70%)",
+        borderRadius: "50%",
+      },
+    };
+  }
+  return {};
+}, [game]);
 
   useEffect(() => {
-    socket.emit("guest:start_game", { 
-      openingName: selectedOpening, 
-      userColor: userColor 
+    if (!socket) return;
+
+    if (!gameId) {
+      socket.emit("guest:start_game", { 
+        openingName: selectedOpening, 
+        userColor: userColor 
+      });
+      setIsEngineTurn(userColor === "black");
+    }
+
+    socket.on("game:sync", (data) => {
+      syncWithServer(data.currentFen);
+      if (data.status === "completed") checkGameOver(data.result);
     });
 
+    socket.on("game:move_success", ({ fen }) => {
+      syncWithServer(fen);
+    });
+
+    socket.on("game:engine_move", ({ move, fen, isGameOver, result }) => {
+      syncWithServer(fen);
+      if (isGameOver) checkGameOver(result);
+    });
+
+    socket.on("game:over", ({ result }) => {
+      checkGameOver(result);
+    });
+
+    // --- GUEST LISTENERS ---
     socket.on("guest:engine_move", ({ move }) => {
       try {
         game.move(move);
-        setPosition(game.fen());
-        setIsEngineTurn(false);
-        setTurn("user");
+        syncWithServer(game.fen());
         checkGameOver();
       } catch (e) {
-        console.error("Invalid move received from engine:", move);
+        console.error("Invalid move received from guest engine:", move);
       }
     });
 
     return () => {
+      socket.off("game:sync");
+      socket.off("game:move_success");
+      socket.off("game:engine_move");
+      socket.off("game:over");
       socket.off("guest:engine_move");
     };
-  }, [socket, selectedOpening, userColor, setTurn, checkGameOver]);
+  }, [socket, gameId, selectedOpening, userColor, syncWithServer, checkGameOver]);
 
   function getMoveOptions(square) {
     const moves = game.moves({ square, verbose: true });
@@ -74,12 +137,16 @@ export default function Board({ socket, userColor, selectedOpening, setTurn, onG
     setMoveFrom("");
     setOptionSquares({});
     setTurn("engine");
-
-    if (checkGameOver()) return;
-
     setIsEngineTurn(true);
+
     const moveString = move.from + move.to + (move.promotion || "");
-    socket.emit("guest:move", moveString);
+    
+    if (gameId) {
+      socket.emit("game:move", { gameId, moveStr: moveString });
+    } else {
+      if (checkGameOver()) return;
+      socket.emit("guest:move", moveString);
+    }
   }
 
   function onSquareClick({ square, piece }) {
@@ -118,7 +185,7 @@ export default function Board({ socket, userColor, selectedOpening, setTurn, onG
     }
   }
 
-  function onPieceDrop({ sourceSquare, targetSquare, piece }) {
+  function onPieceDrop({sourceSquare, targetSquare, piece}) {
     if (game.isGameOver() || isEngineTurn) return false;
     if (game.turn() !== userColor[0]) return false;
 
@@ -135,18 +202,18 @@ export default function Board({ socket, userColor, selectedOpening, setTurn, onG
       return false;
     }
   }
-  function canDragPiece({piece}){
-    if(game.isGameOver() || isEngineTurn) return false;
+
+  function canDragPiece({ piece }) {
+    if (game.isGameOver() || isEngineTurn) return false;
     return game.turn() === userColor[0] && piece.pieceType[0] === userColor[0];
   }
-
   const chessBoardOptions = {
     position,
     canDragPiece,
     onSquareClick,
     onPieceDrop,
     boardOrientation: userColor,
-    squareStyles: optionSquares,
+    squareStyles: {...optionSquares, ...getKingCheckStyle()},
     animationDurationInMs: 300,
     darkSquareStyle: { backgroundColor: "var(--color-board-dark)" },
     lightSquareStyle: { backgroundColor: "var(--color-board-light)" },

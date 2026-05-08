@@ -22,7 +22,7 @@ export default function GameHistory({ games }) {
           <tbody className="divide-y divide-white/5">
             {games.length > 0 ? games.map((game) => (
               <tr key={game._id} className="text-white/80 hover:bg-white/5 transition-colors group">
-                <td className="px-6 py-4 font-medium">Engine Level 4</td>
+                <td className="px-6 py-4 font-medium">Chess Engine</td>
                 <td className="px-6 py-4 capitalize font-light">{game.playerColor}</td>
                 <td className="px-6 py-4">
                   <Link to={`/analyze/${game._id}`}>
@@ -54,7 +54,7 @@ export default function GameHistory({ games }) {
               <tr>
                 <td colSpan="5" className="px-6 py-20 text-center">
                   <p className="text-white/20 italic text-sm mb-4">No analysis history available.</p>
-                  <Link to="/play" className="btn-gold px-6 py-2 text-xs">Start Your First Game</Link>
+                  <Link to="/game-setup" className="btn-gold px-6 py-2 text-xs">Start Your First Game</Link>
                 </td>
               </tr>
             )}

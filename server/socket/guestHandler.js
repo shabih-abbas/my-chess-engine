@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import { getBookMove } from '../utils/openingBook.js';
 import { getEnginePath, getEnginePwd } from '../utils/enginePath.js';
 
-export const registerGuestHandlers = (io, socket) => {
+export default function registerGuestHandlers(io, socket) {
     socket.guestSession = {
         history: [],
         opening: null,
@@ -42,14 +42,14 @@ export const registerGuestHandlers = (io, socket) => {
         let wholeOutput = '';
         engine.stdout.on('data', (data) => {
             const output = data.toString();
-            // console.log("Engine Output:", output);
-
-            if (output.includes("uciok") && !commandsSent) {
+            console.log("Engine Output:", output);
+            
+            wholeOutput += output;
+            if (wholeOutput.includes("uciok") && !commandsSent) {
                 commandsSent = true;
                 engine.stdin.write(`position startpos moves ${session.history.join(' ')}\n`);
                 engine.stdin.write("go movetime 3000\n");
             }
-            wholeOutput += output;
             const match = wholeOutput.match(/bestmove\s(\w{4,5})/);
             if (match) {
                 const engineMove = match[1];

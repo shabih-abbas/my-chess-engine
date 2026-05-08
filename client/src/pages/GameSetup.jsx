@@ -1,11 +1,42 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import toast, { Toaster } from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
 import Wpawn from "../assets/pawn-w.svg";
 import Bpawn from "../assets/pawn-b.svg";
 
 export default function GameSetup() {
   const [color, setColor] = useState('white');
   const [opening, setOpening] = useState('Sicilian Defense');
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  async function createGame(playerColor, opening){
+    try{
+      setLoading(true);
+      const res = await fetch("/api/games/new", {
+        method: "POST",
+        headers: {"content-type": "application/json"},
+        body: JSON.stringify({playerColor, opening}),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if(res.ok){
+        navigate("/play/"+data.gameId);
+      }
+      else{
+        toast.error(data.message, {
+        style: { borderRadius: '8px', background: '#333', color: '#fff', border: '1px solid #ef4444' },
+        });
+      }
+    }catch(err){
+      toast.error(err.message);
+    }
+    finally{
+      setLoading(false);
+    }
+  }
 
   const openings = [
     "Sicilian Defense",
@@ -17,6 +48,7 @@ export default function GameSetup() {
 
   return (
     <main className="min-h-screen bg-chess-board flex flex-col items-center justify-center p-6">
+      <Toaster position="top-right" reverseOrder={false} />
       <div className="glass-panel w-full max-w-md p-8 text-center shadow-2xl border-white/20">
         <h2 className="text-3xl font-extrabold text-chess-gold mb-8 uppercase tracking-widest">
           Game Setup
@@ -68,12 +100,16 @@ export default function GameSetup() {
           Playing as <span className="font-bold capitalize">{color}</span> with the <span className="font-bold">{opening}</span>
         </p>
 
-        <Link 
+        {user ?
+        <button disabled={loading} onClick={() => createGame(color, opening)} className="disabled:opacity-50 disabled:cursor-not-allowed btn-gold inline-block w-full py-4 text-xl uppercase tracking-widest no-underline rounded-lg font-bold">
+          {loading ? "Initializing..." :"Create Game"}
+        </button>        
+        :<Link 
           to={`/play?color=${color}&opening=${encodeURIComponent(opening)}`} 
           className="btn-gold inline-block w-full py-4 text-xl uppercase tracking-widest no-underline rounded-lg font-bold"
         >
           Start Game
-        </Link>
+        </Link>}
       </div>
     </main>
   );

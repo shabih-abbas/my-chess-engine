@@ -1,14 +1,37 @@
 import { Chess } from "chess.js";
 import { spawn } from "child_process";
+import jwt from 'jsonwebtoken';
+import cookie from 'cookie';
 import Game from "../models/Game.js";
-import { getBookMove } from "../utils/openingUtils.js";
+import User from "../models/User.js";
+import { getBookMove } from "../utils/openingBook.js";
 import { getEnginePath, getEnginePwd } from "../utils/enginePath.js";
+
+async function getAuthenticatedUser(socket) {
+  try {
+    const cookieHeader = socket.handshake.headers.cookie;
+    if (!cookieHeader) return null;
+
+    const cookies = cookie.parse(cookieHeader);
+    const token = cookies.jwt;
+    if (!token) return null;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select("-passwordHash");
+    return user;
+  } catch (error) {
+    return null;
+  }
+}
 
 export default function registeredHandler(io, socket) {
   
   socket.on("game:join", async ({ gameId }) => {
     try {
-      const game = await Game.findOne({ _id: gameId, userId: socket.user.id });
+      const user = await getAuthenticatedUser(socket);
+      if (!user) return socket.emit("game:error", "Session expired. Please login again.");
+
+      const game = await Game.findOne({ _id: gameId, userId: user._id });
       if (!game) return socket.emit("game:error", "Unauthorized access.");
 
       socket.join(`game-${gameId}`);
@@ -34,7 +57,10 @@ export default function registeredHandler(io, socket) {
 
   socket.on("game:move", async ({ gameId, moveStr }) => {
     try {
-      const game = await Game.findOne({ _id: gameId, userId: socket.user.id });
+      const user = await getAuthenticatedUser(socket);
+      if (!user) return socket.emit("game:error", "Not authorized.");
+
+      const game = await Game.findOne({ _id: gameId, userId: user._id });
       if (!game || game.status !== "in-progress") return;
 
       const chess = new Chess(game.currentFen);
@@ -73,8 +99,43 @@ export default function registeredHandler(io, socket) {
       socket.emit("game:error", "Server failed to process move.");
     }
   });
-}
 
+  socket.on("game:resign", async ({ gameId, winner }) => {
+    try {
+      const user = await getAuthenticatedUser(socket);
+      if (!user) return socket.emit("game:error", "Unauthorized");
+
+      const game = await Game.findOneAndUpdate(
+        { _id: gameId, userId: user._id, status: "in-progress" },
+        { status: "completed", result: winner },
+        { new: true }
+      );
+
+      if (!game) return socket.emit("game:error", "Game not found or already finished.");
+
+      io.to(`game-${gameId}`).emit("game:over", { 
+        result: `${winner.charAt(0).toUpperCase() + winner.slice(1)} wins by resignation` 
+      });
+    } catch (err) {
+      socket.emit("game:error", "Resignation failed.");
+    }
+  });
+
+  socket.on("game:abort", async ({ gameId }) => {
+    try {
+      const user = await getAuthenticatedUser(socket);
+      if (!user) return socket.emit("game:error", "Unauthorized");
+
+      const game = await Game.findOneAndDelete({ _id: gameId, userId: user._id });
+
+      if (!game) return socket.emit("game:error", "Game not found.");
+
+      socket.emit("game:aborted_success");
+    } catch (err) {
+      socket.emit("game:error", "Abortion failed.");
+    }
+  });
+}
 
 async function handleEngineMove(gameId, game, socket, io) {
   try {
@@ -124,20 +185,20 @@ async function handleEngineMove(gameId, game, socket, io) {
 function getEngineBestMove(historyArr) {
   return new Promise((resolve, reject) => {
     const historyString = historyArr.join(" ");
-    const engine = spawn(enginePath, [], { cwd: engineDir });
+    const engine = spawn(getEnginePath(), [], { cwd: getEnginePwd() });
     let moveFound = false;
     let commandsSent = false;
     engine.stdin.write("uci\n");
     let wholeOutput = '';
     engine.stdout.on("data", (data) => {
       const output = data.toString();
-      
-      if (output.includes("uciok") && !commandsSent) {
+      console.log("Engine output", output);
+      wholeOutput += output;
+      if (wholeOutput.includes("uciok") && !commandsSent) {
         commandsSent = true;
         engine.stdin.write(`position startpos moves ${historyString}\n`);
         engine.stdin.write("go movetime 3000\n");
       }
-      wholeOutput += output;
       const match = wholeOutput.match(/bestmove\s(\w{4,5})/);
       if (match) {
         moveFound = true;
