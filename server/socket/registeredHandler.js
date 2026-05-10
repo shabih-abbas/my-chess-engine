@@ -5,24 +5,8 @@ import cookie from 'cookie';
 import Game from "../models/Game.js";
 import User from "../models/User.js";
 import { getBookMove } from "../utils/openingBook.js";
+import { getAuthenticatedUser } from "../middleware/socketAuth.js";
 import { getEnginePath, getEnginePwd } from "../utils/enginePath.js";
-
-async function getAuthenticatedUser(socket) {
-  try {
-    const cookieHeader = socket.handshake.headers.cookie;
-    if (!cookieHeader) return null;
-
-    const cookies = cookie.parse(cookieHeader);
-    const token = cookies.jwt;
-    if (!token) return null;
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select("-passwordHash");
-    return user;
-  } catch (error) {
-    return null;
-  }
-}
 
 export default function registeredHandler(io, socket) {
   

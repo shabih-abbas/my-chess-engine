@@ -25,7 +25,7 @@ export default function GameHistory({ games }) {
                 <td className="px-6 py-4 font-medium">Chess Engine</td>
                 <td className="px-6 py-4 capitalize font-light">{game.playerColor}</td>
                 <td className="px-6 py-4">
-                  <Link to={`/analyze/${game._id}`}>
+                  <Link to={`/analysis-setup?gameId=${game._id}`}>
                     <span className={`px-2 py-1 rounded text-[10px] font-black uppercase cursor-pointer hover:brightness-125 transition-all ${
                       game.result === 'win' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 
                       game.result === 'loss' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 
@@ -40,7 +40,7 @@ export default function GameHistory({ games }) {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <Link 
-                    to={`/analyze/${game._id}`}
+                    to={`/analysis-setup?gameId=${game._id}`}
                     className="inline-flex items-center gap-2 text-chess-gold opacity-60 group-hover:opacity-100 transition-opacity font-bold text-xs uppercase hover:tracking-widest"
                   >
                     Review

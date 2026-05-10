@@ -4,7 +4,7 @@ A full-stack chess application featuring a custom chess engine written in **C**,
 
 ---
 
-## 🚀 Features
+## Features
 
 ### **Custom C Engine**
 *   **Mailbox Engine:** Acurrate move generation using mailbox representations.
@@ -24,7 +24,7 @@ A full-stack chess application featuring a custom chess engine written in **C**,
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 *   **Frontend:** React, Tailwind CSS, Socket.io-client.
 *   **Backend:** Node.js, Express, MongoDB, Mongoose.
@@ -32,7 +32,7 @@ A full-stack chess application featuring a custom chess engine written in **C**,
 
 ---
 
-## 🛡️ Credits
+## Credits
 
 The core logic of the chess engine—including move generation and search algorithms—was developed following the "Programming a Chess Engine in C" educational series by **Bluefever Software**.
 

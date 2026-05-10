@@ -6,27 +6,27 @@ const annotationSchema = new mongoose.Schema({
     ref: 'AnalysisSession',
     required: true
   },
-  gameId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Game',
-    required: true
-  },
   moveNumber: {
     type: Number,
     required: true
   },
-  comment: {
-    type: String,
+  eval: {
+    type: Number, 
     required: true
+  },
+  bestLine: {
+    type: [String], 
+    default: []
   },
   annotationType: {
     type: String,
-    enum: ['blunder', 'mistake', 'brilliant', 'best', 'inaccuracy', 'commentary'],
-    default: 'commentary'
+    enum: ['best', 'book', 'good', 'inaccuracy', 'mistake', 'blunder'],
+    default: 'good'
+  },
+  comment: {
+    type: String
   }
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
 const Annotation = mongoose.model('Annotation', annotationSchema);
 export default Annotation;

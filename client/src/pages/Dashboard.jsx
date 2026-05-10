@@ -39,7 +39,7 @@ export default function Dashboard() {
               <Link to="/game-setup" className="text-white/60 hover:text-chess-gold font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all">
                 New Game
               </Link>
-              <Link to="/analyze" className="text-white/60 hover:text-chess-gold font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all">
+              <Link to="/analysis-setup" className="text-white/60 hover:text-chess-gold font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all">
                 Analyze
               </Link>
             </div>

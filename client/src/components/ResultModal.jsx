@@ -1,5 +1,7 @@
 import { Link } from "react-router";
+import { useAuth } from "../context/AuthContext";
 export default function ResultModal({result}){
+    const {user} = useAuth();
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="glass-panel p-10 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] border-chess-gold/30">
@@ -16,6 +18,12 @@ export default function ResultModal({result}){
               >
                 Rematch
               </button>
+              {user ? 
+              <Link to="/analysis-setup" className="btn-gold w-full py-3 block text-center no-underline cursor-pointer">
+                Analyze
+              </Link>
+              : null
+              }
               <Link to="/" className="block text-white/70 hover:text-white font-bold uppercase tracking-widest text-xs transition-colors">
                 Back to Dashboard
               </Link>

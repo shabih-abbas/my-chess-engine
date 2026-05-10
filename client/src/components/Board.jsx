@@ -81,10 +81,20 @@ export default function Board({ socket, userColor, selectedOpening, setTurn, onG
 
     socket.on("game:engine_move", ({ move, fen, isGameOver, result }) => {
       syncWithServer(fen);
-      if (isGameOver) checkGameOver(result);
+      if (isGameOver && result) {
+        let resultText = result[0].toUpperCase() + result.slice(1);
+        if(result !== 'draw'){
+          resultText += " Wins"
+        }
+        checkGameOver(resultText);
+      }
     });
 
     socket.on("game:over", ({ result }) => {
+      let resultText = result[0].toUpperCase() + result.slice(1);
+        if(result !== 'draw'){
+          resultText += " Wins"
+        }
       checkGameOver(result);
     });
 
@@ -218,6 +228,7 @@ export default function Board({ socket, userColor, selectedOpening, setTurn, onG
     darkSquareStyle: { backgroundColor: "var(--color-board-dark)" },
     lightSquareStyle: { backgroundColor: "var(--color-board-light)" },
     dropSquareStyle: {boxShadow: "inset 0 0 1px 4px rgba(255,255,255,0.4)"},
+    boardStyle: { borderRadius: '4px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)'},
   }
 
   return (
