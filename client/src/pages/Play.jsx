@@ -6,6 +6,7 @@ import Board from "../components/Board";
 import UserAvatar from "../components/userAvatar";
 import EngineAvatar from "../components/engineAvatar";
 import ResultModal from "../components/ResultModal";
+import Loading from "../components/Loading";
 
 export default function Play() {
   const [searchParams] = useSearchParams();
@@ -36,7 +37,7 @@ export default function Play() {
             });
           } else {
             toast.error("Could not load game.");
-            navigate("/setup");
+            navigate("/game-setup");
           }
         } catch (err) {
           toast.error("Connection error.");
@@ -92,7 +93,7 @@ async function resignGame(gameId, winner) {
   socket.emit("game:resign", { gameId, winner });
 }
 
-  if (!gameData.isLoaded) return null;
+  if (!gameData.isLoaded) return <Loading />;
 
   return (
     <main className="h-screen w-full bg-chess-board flex flex-col lg:flex-row p-4 lg:p-8 overflow-hidden relative">

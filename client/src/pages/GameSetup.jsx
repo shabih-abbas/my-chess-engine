@@ -110,6 +110,12 @@ export default function GameSetup() {
         >
           Start Game
         </Link>}
+        <Link 
+          to='/dashboard' 
+          className="mt-6 block text-white/40 hover:text-white/80 transition-colors text-sm uppercase tracking-widest font-bold"
+        >
+          Cancel
+        </Link>
       </div>
     </main>
   );

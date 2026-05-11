@@ -25,15 +25,24 @@ export default function GameHistory({ games }) {
                 <td className="px-6 py-4 font-medium">Chess Engine</td>
                 <td className="px-6 py-4 capitalize font-light">{game.playerColor}</td>
                 <td className="px-6 py-4">
+                { game.status === "in-progress" ?
+                  <Link to={`/play/${game._id}`}>
+                    <span className={`px-2 py-1 rounded text-[10px] font-black uppercase cursor-pointer hover:brightness-125 transition-all 
+                      bg-chess-gold/10 text-chess-gold border border-chess-gold/20`}>
+                      Continue
+                    </span>
+                  </Link>
+                :
                   <Link to={`/analysis-setup?gameId=${game._id}`}>
                     <span className={`px-2 py-1 rounded text-[10px] font-black uppercase cursor-pointer hover:brightness-125 transition-all ${
-                      game.result === 'win' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 
-                      game.result === 'loss' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 
+                      game.result === game.playerColor ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 
+                      game.result !== 'draw' && game.result !== game.playerColor ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 
                       'bg-chess-gold/10 text-chess-gold border border-chess-gold/20'
                     }`}>
                       {game.result}
                     </span>
                   </Link>
+                }
                 </td>
                 <td className="px-6 py-4 text-sm text-white/50">
                   {new Date(game.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}

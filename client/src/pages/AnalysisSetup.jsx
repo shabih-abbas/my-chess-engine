@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams, Link } from "react-router";
 import toast, { Toaster } from "react-hot-toast";
 import { BrainCircuit } from "lucide-react";
 
@@ -103,12 +103,12 @@ export default function AnalysisSetup() {
           )}
         </button>
 
-        <button 
-          onClick={() => navigate(-1)} 
-          className="mt-6 text-white/40 hover:text-white/80 transition-colors text-sm uppercase tracking-widest font-bold"
+        <Link 
+          to='/dashboard' 
+          className="mt-6 block text-white/40 hover:text-white/80 transition-colors text-sm uppercase tracking-widest font-bold"
         >
           Cancel
-        </button>
+        </Link>
       </div>
     </main>
   );

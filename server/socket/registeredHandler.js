@@ -25,7 +25,8 @@ export default function registeredHandler(io, socket) {
         currentFen: game.currentFen,
         moves: game.moves,
         status: game.status,
-        openingName: game.opening
+        openingName: game.opening,
+        result: game.result,
       });
 
       const chess = new Chess(game.currentFen);
